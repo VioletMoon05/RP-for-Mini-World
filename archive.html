@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Archive — Resource Mini Lab</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&family=Noto+Sans+JP:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+    /* ── Reset ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    a { text-decoration: none; color: inherit; }
+    ul, ol { list-style: none; }
+    img { max-width: 100%; height: auto; display: block; }
+
+    /* ── Variables (dark theme từ web của bạn) ── */
+    :root {
+        --bg:          #1a1a2e;
+        --bg2:         #16213e;
+        --accent:      #e94560;
+        --accent2:     #f5a623;
+        --green:       #4caf50;
+        --text:        #e0e0e0;
+        --text-dim:    #a0a0b8;
+        --card-bg:     #1e2040;
+        --card-border: rgba(255,255,255,0.08);
+        --radius:      10px;
+        --font:        'Quicksand', 'Noto Sans JP', sans-serif;
+        --shadow:      0 4px 20px rgba(0,0,0,0.5);
+        --teal:        #7ecdc8;
+        --pink:        #e8a0b0;
+    }
+
+    /* ── Body (dark) ── */
+    body {
+        font-family: var(--font);
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        line-height: 1.7;
+        overflow-x: hidden;
+    }
+
+    /* ── Loading ── */
+    #loading-screen {
+        position: fixed; inset: 0;
+        background: var(--bg);
+        display: flex; align-items: center; justify-content: center;
+        z-index: 9999;
+        transition: opacity 0.5s, visibility 0.5s;
+    }
+    #loading-screen.hidden { opacity: 0; visibility: hidden; }
+    .loader {
+        width: 44px; height: 44px;
+        border: 4px solid rgba(255,255,255,0.08);
+        border-top-color: var(--accent);
+        border-radius: 50%;
+        animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ══════════════════════════════
+       Header — dark (giống web bạn)
+    ══════════════════════════════ */
+    #header-container {
+        position: sticky; top: 0; z-index: 100;
+        background: rgba(15,15,30,0.95);
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .header-inner {
+        max-width: 1200px; margin: 0 auto;
+        padding: 0 24px; height: 64px;
+        display: flex; align-items: center; justify-content: space-between;
+    }
+    .header-logo {
+        font-size: 1.4rem; font-weight: 700;
+        letter-spacing: 0.04em; color: #fff;
+    }
+    .header-logo span { color: var(--accent); }
+    .header-nav { display: flex; gap: 6px; align-items: center; }
+    .header-nav a {
+        font-size: 0.85rem; font-weight: 600;
+        padding: 6px 14px; border-radius: 6px;
+        color: var(--text-dim);
+        transition: background 0.2s, color 0.2s;
+    }
+    .header-nav a:hover { background: rgba(255,255,255,0.08); color: #fff; }
+    .header-nav a.nav-dl {
+        background: var(--accent); color: #fff;
+    }
+    .header-nav a.nav-dl:hover { background: #c73050; }
+
+    /* ── Lang toggle ── */
+    .change-lang { position: fixed; top: 72px; right: 16px; z-index: 99; }
+    #lang-btn {
+        display: flex; align-items: center; gap: 6px;
+        background: rgba(255,255,255,0.08);
+        border: 1px solid rgba(255,255,255,0.15);
+        padding: 5px 12px; border-radius: 20px;
+        font-size: 0.75rem; font-weight: 600; color: var(--text-dim);
+        cursor: pointer; font-family: var(--font);
+        transition: background 0.2s;
+    }
+    #lang-btn:hover { background: rgba(255,255,255,0.14); color: #fff; }
+    #lang-menu {
+        display: none; position: absolute; right: 0; top: calc(100% + 6px);
+        background: #1e2040; border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 10px; overflow: hidden; min-width: 150px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    }
+    #lang-menu.open { display: block; }
+    .lang-option {
+        display: flex; align-items: center; gap: 8px;
+        padding: 9px 14px; font-size: 0.82rem; font-weight: 600;
+        color: var(--text-dim); cursor: pointer; transition: background 0.15s;
+    }
+    .lang-option:hover { background: rgba(255,255,255,0.06); color: #fff; }
+    .lang-option.active { color: var(--accent); }
+
+    /* ── Back to top ── */
+    #backToTop {
+        position: fixed; bottom: 24px; right: 24px; z-index: 99;
+        width: 48px; height: 48px; background: #2a2a4a;
+        border: none; border-radius: 10px; cursor: pointer;
+        opacity: 0; pointer-events: none; transition: opacity 0.3s;
+        display: flex; align-items: center; justify-content: center;
+        box-shadow: var(--shadow); color: #fff; font-size: 1rem;
+    }
+    #backToTop::after { content: '↑'; color: #fff; font-size: 1.1rem; font-weight: 700; }
+    #backToTop.visible { opacity: 1; pointer-events: auto; }
+
+    /* ── Main ── */
+    #page-main { max-width: 1200px; margin: 0 auto; padding: 0 24px 80px; }
+
+    /* ── Breadcrumb ── */
+    .pankuzu {
+        display: flex; align-items: center; gap: 6px;
+        padding: 16px 0 10px;
+        font-size: 0.82rem; color: var(--text-dim);
+    }
+    .pankuzu a { color: var(--text-dim); font-weight: 600; transition: color 0.2s; }
+    .pankuzu a:hover { color: #fff; }
+    .pankuzu-sep { opacity: 0.4; }
+
+    /* ── Page title ── */
+    .title-area { margin: 8px 0 32px; }
+    .title-area h1 {
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: 14px;
+        padding: 20px 32px;
+        text-align: center;
+        font-size: 1.4rem; font-weight: 700;
+        color: var(--text);
+        box-shadow: var(--shadow);
+    }
+
+    /* ══════════════════════════════
+       Article cards — dark style
+    ══════════════════════════════ */
+    .archive-articles {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 18px;
+        margin-bottom: 40px;
+    }
+    @media (max-width: 1000px) { .archive-articles { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 700px)  { .archive-articles { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 440px)  { .archive-articles { grid-template-columns: 1fr; } }
+
+    .article-card {
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: var(--radius);
+        overflow: hidden;
+        box-shadow: var(--shadow);
+        transition: transform 0.22s, box-shadow 0.22s, border-color 0.22s;
+        cursor: pointer;
+    }
+    .article-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 36px rgba(0,0,0,0.6);
+        border-color: rgba(255,255,255,0.16);
+    }
+    .card-thumb { width: 100%; aspect-ratio: 16/10; overflow: hidden; background: #0f0f22; }
+    .card-thumb img {
+        width: 100%; height: 100%; object-fit: cover;
+        transition: transform 0.35s ease;
+    }
+    .article-card:hover .card-thumb img { transform: scale(1.06); }
+    .card-body { padding: 10px 12px 14px; }
+    .card-date {
+        display: flex; align-items: center; gap: 5px;
+        font-size: 0.72rem; color: var(--text-dim); margin-bottom: 6px;
+    }
+    .card-date i { font-size: 0.65rem; color: var(--text-dim); }
+    .card-title {
+        font-size: 0.85rem; font-weight: 600;
+        color: var(--text); line-height: 1.45;
+    }
+
+    /* ══════════════════════════════
+       Pagination — pill style (miniaturia.club)
+       active = accent red, inactive viền teal
+    ══════════════════════════════ */
+    #pagination {
+        display: flex; justify-content: center;
+        align-items: center; gap: 8px;
+        margin-bottom: 48px; flex-wrap: wrap;
+    }
+    .page-btn {
+        width: 42px; height: 42px; border-radius: 50%;
+        border: 2px solid var(--teal);
+        background: transparent; color: var(--text);
+        font-family: var(--font); font-size: 0.92rem; font-weight: 700;
+        cursor: pointer; transition: background 0.18s, color 0.18s, border-color 0.18s;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .page-btn:hover { background: var(--teal); color: #1a1a2e; }
+    .page-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .page-btn.dots { border-color: transparent; background: transparent; color: var(--text-dim); cursor: default; width: 32px; }
+    .page-btn.arrow { border-color: var(--teal); }
+    .page-btn.arrow:hover { background: var(--teal); color: #1a1a2e; }
+
+    /* ══════════════════════════════
+       Footer — dark như web bạn
+    ══════════════════════════════ */
+    #footer-container {
+        background: #0d0d1a;
+        border-top: 1px solid rgba(255,255,255,0.06);
+        color: var(--text-dim);
+        text-align: center;
+        padding: 32px 24px;
+        font-size: 0.8rem;
+    }
+    .footer-social {
+        display: flex; justify-content: center; gap: 14px; margin-bottom: 16px;
+    }
+    .footer-social a {
+        width: 34px; height: 34px;
+        border: 1px solid rgba(255,255,255,0.15); border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.9rem; transition: border-color 0.2s, color 0.2s;
+    }
+    .footer-social a:hover { border-color: var(--accent); color: var(--accent); }
+    .footer-links {
+        display: flex; flex-wrap: wrap;
+        justify-content: center; gap: 16px; margin-bottom: 16px;
+    }
+    .footer-links a { transition: color 0.2s; }
+    .footer-links a:hover { color: #fff; }
+    .footer-copy { opacity: 0.5; margin-top: 4px; }
+
+    /* ── Fade-in ── */
+    .fade-in { opacity: 0; transform: translateY(20px); transition: opacity 0.5s, transform 0.5s; }
+    .fade-in.visible { opacity: 1; transform: none; }
+
+
+    </style>
+</head>
+<body>
+
+<!-- Loading -->
+<div id="loading-screen"><div class="loader"></div></div>
+
+<!-- Header (dark — giống web bạn) -->
+<header id="header-container">
+    <div class="header-inner">
+        <a class="header-logo" href="index.html">Resource <span>Mini</span> Lab</a>
+        <nav class="header-nav">
+            <a href="" class="nav-dl">Support ♥</a>
+        </nav>
+    </div>
+</header>
+
+<!-- Lang toggle -->
+<div class="change-lang">
+    <button id="lang-btn" onclick="toggleLangMenu()">🌐 <span id="lang-current">EN</span> ▾</button>
+    <div id="lang-menu">
+        <div class="lang-option active" onclick="setLang(event,'en','EN')">🇬🇧 English</div>
+        <div class="lang-option" onclick="setLang(event,'vi','VI')">🇻🇳 Tiếng Việt</div>
+        <div class="lang-option" onclick="setLang(event,'ja','JP')">🇯🇵 日本語</div>
+    </div>
+</div>
+
+<!-- Back to top -->
+<button id="backToTop" aria-label="Back to top"></button>
+
+<main id="page-main">
+
+    <!-- Breadcrumb -->
+    <nav class="pankuzu">
+        <a href="index.html">HOME</a>
+        <span class="pankuzu-sep">›</span>
+        <span data-i18n="page_title">Archive</span>
+    </nav>
+
+    <!-- Title -->
+    <section class="title-area">
+        <h1 data-i18n="page_title">All Pages — Latest First</h1>
+    </section>
+
+    <!-- Cards grid (render bởi JS) -->
+    <section class="fade-in">
+        <div id="article1-container" class="archive-articles"></div>
+        <div id="pagination"></div>
+    </section>
+
+</main>
+
+<!-- Footer (dark như web bạn) -->
+<footer id="footer-container">
+    <div class="footer-social">
+        <a href="https://www.facebook.com/share/1DByMe1LMU/" target="_blank" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+        <a href="https://www.youtube.com/@VazkiiMod" target="_blank" aria-label="YouTube"><i class="fa-brands fa-youtube"></i></a>
+        <a href="https://www.tiktok.com/@vazkiimod" target="_blank" aria-label="TikTok"><i class="fa-brands fa-tiktok"></i></a>
+    </div>
+    <div class="footer-links">
+        <a href="index.html" data-i18n="foot_home">Home</a>
+        <a href="#" data-i18n="foot_terms">Terms</a>
+        <a href="#" data-i18n="foot_support">Support</a>
+        <a href="#" data-i18n="foot_archive">Archive</a>
+    </div>
+    <p class="footer-copy">© MW Resource Lab / Vazkii & Mèo. Resource pack is for Mini World</p>
+</footer>
+
+<script>
+// ═══════════════════════════════════════════════════
+// DANH SÁCH BÀI VIẾT — thêm/xóa tại đây
+// Mỗi item: { href, img, alt, date, title }
+// Tối đa 6 trang × 8 bài = 48 bài
+// ═══════════════════════════════════════════════════
+const ALL_ITEMS = [
+    { href: 'https://www.mediafire.com/file/b4xkrexnvnvg4ec/Annahstas-Beastrinia-Resource-Pack_1.zip/file',                    img: 'image/Annahstas-Beastrinia.jpg',                               alt: 'Annahstas Beastrinia',      date: '2025-25-10', title: 'Annahstas Beastrinia <br>By: Mèo'},
+    { href: 'https://www.mediafire.com/file/p3nix21b16zlod6/ConquestReforged_0.2_bb898837-5079-4f3f-9823-4a37059612f9.rar/file',                    img: 'image/conquest.png',                                            alt: 'ConquestReforge',           date: '2025-22-05', title: 'ConquestReforge <br>By: Vazkii' },
+    { href: 'https://www.mediafire.com/file/h77ciwa6bq8zri1/ClassicMW-V4-Fix_1.0_07dc3e88-f351-11e6-bc68-u1273466169.rar/file',                    img: 'image/Classic-MW.png',                                         alt: 'Classic Mini World',        date: '2025-29-06', title: 'Classic Mini World 2018 <br>by: Vazkii x Mèo' },
+    { href: 'https://www.mediafire.com/file/w6u3zpdw7nzr2re/Material_1.3_3a3fefca-3b02-11e7-a919-92ebcb67fe33.rar/file',                   img: 'image/cartoon2.0.png',                                         alt: 'Cartoon 2.0',                 date: '2024-01-03', title: 'Cartoon 2.0 <br>by: Mini Captain'},
+    { href: 'https://www.mediafire.com/file/vk5o960p82pnc0r/Realistic-Ver2_0.1_2b96d66d-509b-475b-96fe-7fc131bc2b90.rar/file',                   img: 'image/icon.png',                                               alt: 'Realistic',            date: '2019-11-03', title: 'Realistic <br>by: Mini Captain' },
+    { href: 'https://www.mediafire.com/file/ym67oxpt3j7itoa/64x_1.9_3a3fefca-3b02-11e7-a919-92ebcb67fe33.zip/file',                   img: 'image/minecraft64x.png',                                       alt: 'Rojiura',                  date: '2025-30-09', title: 'Resource Pack Minecraft 64x <br>by: Mèo' },
+    { href: 'https://www.mediafire.com/file/8l4iamk7sbad6pp/RojiuraMod_0.2_bb898837-5079-4f3f-9823-4a37059612f9.rar/file',                   img: 'image/rojiura.png',                                            alt: 'MiniaTuria Legacy',         date: '2025-08-07', title: 'Rojiura Mod <br>by: Vazkii' },
+    { href: 'https://www.mediafire.com/file/4ox4yxxdm590maf/Whimscape-RP.rar/file',                   img: 'image/town.png',                                               alt: 'Whimwhimscape',              date: '2025-09-15', title: 'whimscape <br>by: Vazkii' },
+    // ── Thêm bài mới vào đây ──
+    // { href: '#', img: 'image/ten-anh.jpg', alt: 'Alt text', date: '2025-09-01', title: 'Tên bài viết' },
+];
+
+const PER_PAGE   = 8;   // số bài mỗi trang
+const MAX_PAGES  = Infinity; // không giới hạn số trang
+let   currentPage = 1;
+
+// ── Render cards ──────────────────────────────────
+function renderCards(page) {
+    const grid  = document.getElementById('article1-container');
+    const start = (page - 1) * PER_PAGE;
+    const end   = Math.min(start + PER_PAGE, ALL_ITEMS.length);
+    const items = ALL_ITEMS.slice(start, end);
+
+    grid.innerHTML = items.map(item => `
+        <article><a href="${item.href}">
+            <div class="article-card">
+                <div class="card-thumb">
+                    <img src="${item.img}" alt="${item.alt}" loading="lazy">
+                </div>
+                <div class="card-body">
+                    <p class="card-date"><i class="fa-regular fa-calendar"></i> ${item.date}</p>
+                    <p class="card-title">${item.title}</p>
+                </div>
+            </div>
+        </a></article>
+    `).join('');
+}
+
+// ── Render pagination ─────────────────────────────
+function renderPagination() {
+    const total     = Math.min(Math.ceil(ALL_ITEMS.length / PER_PAGE), MAX_PAGES);
+    const pag       = document.getElementById('pagination');
+
+    // Ẩn pagination nếu chỉ có 1 trang
+    if (total <= 1) { pag.innerHTML = ''; return; }
+
+    let html = '';
+
+    // Nút « Prev
+    if (currentPage > 1) {
+        html += `<button class="page-btn arrow" onclick="goPage(${currentPage - 1})">«</button>`;
+    }
+
+    // Logic hiển thị số trang:
+    // ≤ 5 trang: hiện tất cả
+    // > 5 trang: hiện 1 ... (giữa) ... cuối kiểu rút gọn
+    if (total <= 5) {
+        for (let i = 1; i <= total; i++) {
+            html += btnHtml(i);
+        }
+    } else {
+        // Luôn hiện trang 1
+        html += btnHtml(1);
+
+        if (currentPage > 3) html += `<span class="page-btn dots">···</span>`;
+
+        // Hiện trang xung quanh currentPage
+        const from = Math.max(2, currentPage - 1);
+        const to   = Math.min(total - 1, currentPage + 1);
+        for (let i = from; i <= to; i++) {
+            html += btnHtml(i);
+        }
+
+        if (currentPage < total - 2) html += `<span class="page-btn dots">···</span>`;
+
+        // Luôn hiện trang cuối
+        html += btnHtml(total);
+    }
+
+    // Nút » Next
+    if (currentPage < total) {
+        html += `<button class="page-btn arrow" onclick="goPage(${currentPage + 1})">»</button>`;
+    }
+
+    pag.innerHTML = html;
+}
+
+function btnHtml(n) {
+    const active = n === currentPage ? ' active' : '';
+    return `<button class="page-btn${active}" onclick="goPage(${n})">${n}</button>`;
+}
+
+// ── Chuyển trang ──────────────────────────────────
+function goPage(page) {
+    const total = Math.min(Math.ceil(ALL_ITEMS.length / PER_PAGE), MAX_PAGES);
+    if (page < 1 || page > total) return;
+    currentPage = page;
+    renderCards(page);
+    renderPagination();
+    // Scroll lên đầu grid nhẹ nhàng
+    document.getElementById('article1-container').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ── Init ──────────────────────────────────────────
+window.addEventListener('load', () => {
+    document.getElementById('loading-screen').classList.add('hidden');
+    renderCards(1);
+    renderPagination();
+});
+
+// ── Back to top ───────────────────────────────────
+window.addEventListener('scroll', () => {
+    document.getElementById('backToTop').classList.toggle('visible', window.scrollY > 400);
+});
+document.getElementById('backToTop').addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+
+// ── Fade-in ───────────────────────────────────────
+const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } });
+}, { threshold: 0.1 });
+document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
+
+// ── Lang switcher ─────────────────────────────────
+const i18n = {
+    en: { page_title: 'All Pages — Latest First', foot_home: 'Home', foot_terms: 'Terms', foot_support: 'Support', foot_archive: 'Archive' },
+    vi: { page_title: 'Tất cả trang — Mới nhất',  foot_home: 'Trang chủ', foot_terms: 'Điều khoản', foot_support: 'Ủng hộ', foot_archive: 'Lưu trữ' },
+    ja: { page_title: '全ページ 新着順',            foot_home: 'ホーム', foot_terms: '利用規約', foot_support: 'サポート', foot_archive: 'アーカイブ' }
+};
+function toggleLangMenu() { document.getElementById('lang-menu').classList.toggle('open'); }
+document.addEventListener('click', e => {
+    if (!document.querySelector('.change-lang').contains(e.target))
+        document.getElementById('lang-menu').classList.remove('open');
+});
+function setLang(e, lang, label) {
+    document.getElementById('lang-current').textContent = label;
+    document.getElementById('lang-menu').classList.remove('open');
+    document.querySelectorAll('.lang-option').forEach(el => el.classList.remove('active'));
+    e.currentTarget.classList.add('active');
+    const t = i18n[lang];
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (t[key]) el.textContent = t[key];
+    });
+}
+</script>
+</body>
+</html>
